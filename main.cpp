@@ -7,18 +7,6 @@ using namespace std;
 ///*************************************/////////
 
 
-
-// Many to Many Relationship //
-class Student_Lesson
-{
-    int studentNumber;
-    char name[255];
-
-public:
-    static void addLesson(Student student, Lesson lesson);
-    static void removeLesson(Student student, Lesson lesson);
-};
-
 class Student
 {
     char name[255], family[255];
@@ -32,8 +20,7 @@ public:
     friend istream &operator>>(istream &input, Student &student);
     friend ostream &operator<<(ostream &output, const Student &student);
     bool studentExists();
-    friend void Student_Lesson::addLesson(Student student, Lesson lesson);
-    friend void Student_Lesson::removeLesson(Student student, Lesson lesson);
+    friend class Student_Lesson;
 };
 
 
@@ -74,8 +61,18 @@ public:
     static void removeLessons(char name[]);
     friend istream &operator>>(istream &input, Lesson &lesson);
     friend ostream &operator<<(ostream &output, const Lesson &lesson);
-    friend void Student_Lesson::addLesson(Student student, Lesson lesson);
-    friend void Student_Lesson::removeLesson(Student student, Lesson lesson);
+    friend class Student_Lesson;
+};
+
+// Many to Many Relationship //
+class Student_Lesson
+{
+    int studentNumber;
+    char name[255];
+
+public:
+    static void addLesson(Student student, Lesson lesson);
+    static void removeLesson(Student student, Lesson lesson);
 };
 
 istream &operator>>(istream &input, Lesson &lesson)

@@ -1,7 +1,23 @@
 #include <iostream>
 #include <fstream>
-#include <string.h>
 using namespace std;
+
+////************************************////////
+// Employees password keeped in README.md file //
+///*************************************/////////
+
+
+
+// Many to Many Relationship //
+class Student_Lesson
+{
+    int studentNumber;
+    char name[255];
+
+public:
+    static void addLesson(Student student, Lesson lesson);
+    static void removeLesson(Student student, Lesson lesson);
+};
 
 class Student
 {
@@ -13,12 +29,13 @@ public:
     static void read(int studentNumber);
     static void edit(int studentNumber);
     static void removeStudent(int studentNumber);
-    static void addLesson();
-    static void removeLesson();
     friend istream &operator>>(istream &input, Student &student);
     friend ostream &operator<<(ostream &output, const Student &student);
     bool studentExists();
+    friend void Student_Lesson::addLesson(Student student, Lesson lesson);
+    friend void Student_Lesson::removeLesson(Student student, Lesson lesson);
 };
+
 
 istream &operator>>(istream &input, Student &student)
 {
@@ -37,7 +54,6 @@ istream &operator>>(istream &input, Student &student)
 ostream &operator<<(ostream &output, const Student &student)
 {
     output << "\n---------------------------------------------\n";
-    // output << "\nid: " << student.id;
     output << "\nStudent Number: " << student.studentNumber;
     output << "\nName: " << student.name;
     output << "\nFamily: " << student.family;
@@ -52,18 +68,101 @@ class Lesson
     int count;
 
 public:
-    void read();
-    void add();
-    void edit();
-    void remove();
+    static void readLessons();
+    static void add();
+    static void edit(char name[]);
+    static void removeLessons(char name[]);
     friend istream &operator>>(istream &input, Lesson &lesson);
     friend ostream &operator<<(ostream &output, const Lesson &lesson);
+    friend void Student_Lesson::addLesson(Student student, Lesson lesson);
+    friend void Student_Lesson::removeLesson(Student student, Lesson lesson);
 };
+
+istream &operator>>(istream &input, Lesson &lesson)
+{
+    cout << "\nLesson Name: ";
+    input >> lesson.name;
+    cout << "\nCount: ";
+    input >> lesson.count;
+    return input;
+}
+
+ostream &operator<<(ostream &output, const Lesson &lesson)
+{
+    output << "\n---------------------------------------------\n";
+    output << "\nLesson Name: " << lesson.name;
+    output << "\nCount: " << lesson.count;
+    cout << endl;
+    return output;
+}
+void Lesson::add()
+{
+    Lesson lesson;
+    ofstream lessonsFile("lessons", ios::binary | ios::app);
+    cin >> lesson;
+
+    lessonsFile.write((char *)&lesson, sizeof(lesson));
+    cout << "\nLesson Added Successfully!\n";
+
+    lessonsFile.close();
+}
+
+void Lesson::readLessons()
+{
+    Lesson lesson;
+    ifstream lessonsFile("lessons", ios::binary);
+    while (lessonsFile.read((char *)&lesson, sizeof(lesson)))
+    {
+        cout << lesson;
+    }
+    lessonsFile.close();
+}
+
+void Lesson::edit(char name[])
+{
+    Lesson lesson;
+    Lesson specificlesson;
+    ifstream lessonsFile("lessons", ios::binary);
+    ofstream tempFile("temp", ios::binary | ios::app);
+    while (lessonsFile.read((char *)&lesson, sizeof(lesson)))
+    {
+        if (lesson.name == name)
+        {
+            cin >> lesson;
+            specificlesson = lesson;
+        }
+        tempFile.write((char *)&lesson, sizeof(lesson));
+    }
+    cout << specificlesson;
+    lessonsFile.close();
+    tempFile.close();
+    remove("lessons");
+    rename("temp", "lessons");
+}
+
+void Lesson::removeLessons(char name[])
+{
+    Lesson lesson;
+    ifstream lessonsFile("lessons", ios::binary);
+    ofstream tempFile("temp", ios::binary | ios::app);
+    while (lessonsFile.read((char *)&lesson, sizeof(lesson)))
+    {
+        if (lesson.name != name)
+        {
+            tempFile.write((char *)&lesson, sizeof(lesson));
+        }
+    }
+    cout << "lesson Successufy Removed!\n";
+    lessonsFile.close();
+    tempFile.close();
+    remove("lessons");
+    rename("temp", "lessons");
+}
 
 void Student::add()
 {
     Student student;
-    ofstream studentsFile("students.yazddb", ios::binary | ios::app);
+    ofstream studentsFile("students", ios::binary | ios::app);
     cin >> student;
     if (!student.studentExists())
     {
@@ -80,7 +179,7 @@ void Student::add()
 void Student::read(int studentNumber)
 {
     Student student;
-    ifstream studentsFile("students.yazddb", ios::binary);
+    ifstream studentsFile("students", ios::binary);
     while (studentsFile.read((char *)&student, sizeof(student)))
     {
         if (student.studentNumber == studentNumber)
@@ -93,33 +192,50 @@ void Student::read(int studentNumber)
 
 void Student::edit(int studentNumber)
 {
-
+    Student student;
+    Student specificStudent;
+    ifstream studentsFile("students", ios::binary);
+    ofstream tempFile("temp", ios::binary | ios::app);
+    while (studentsFile.read((char *)&student, sizeof(student)))
+    {
+        if (student.studentNumber == studentNumber)
+        {
+            cin >> student;
+            specificStudent = student;
+        }
+        tempFile.write((char *)&student, sizeof(student));
+    }
+    cout << specificStudent;
+    studentsFile.close();
+    tempFile.close();
+    remove("students");
+    rename("temp", "students");
 }
 
 void Student::removeStudent(int studentNumber)
 {
     Student student;
-    ifstream studentsFile("students" , ios::binary);
-    ofstream tempFile("temp" , ios::binary | ios::app);
-    while(studentsFile.read((char *) &student , sizeof(student)))
+    ifstream studentsFile("students", ios::binary);
+    ofstream tempFile("temp", ios::binary | ios::app);
+    while (studentsFile.read((char *)&student, sizeof(student)))
     {
         if (student.studentNumber != studentNumber)
         {
-            tempFile.write((char*) &student , sizeof(student));
+            tempFile.write((char *)&student, sizeof(student));
         }
     }
+    cout << "Student Successufy Removed!\n";
     studentsFile.close();
     tempFile.close();
     remove("students");
-    rename("temp" , "students");
-
+    rename("temp", "students");
 }
 
 bool Student::studentExists()
 {
     Student student;
     bool is = false;
-    ifstream studentsFile("students.yazddb", ios::binary);
+    ifstream studentsFile("students", ios::binary);
     while (studentsFile.read((char *)&student, sizeof(student)))
     {
         if (student.studentNumber == studentNumber)
@@ -157,13 +273,23 @@ void employeeDeskMessage()
     cout << "7- Remove Student\n";
     cout << "8- Edit Student\n";
     cout << "9- Student Info\n";
-    cout << "10- Exit\n";
+    cout << "10- Lessons List\n";
+    cout << "11- Exit\n";
     cout << "Choose: ";
+}
+
+void StudentDeskMessage()
+{
 }
 
 void getStudentNumberMessage()
 {
     cout << "Enter Student Number: ";
+}
+
+void getLessonNameMessage()
+{
+    cout << "Enter Lesson Name: ";
 }
 
 int main()
@@ -172,6 +298,7 @@ int main()
     int attempCount = 0;
     string password;
     bool login = false;
+    char name[255];
     userTypeMessage();
     cin >> userType;
     while (userType != 3)
@@ -192,7 +319,7 @@ int main()
                     cout << "Many Attempt!\n";
                     return 0;
                 }
-                if (password != "yazdUniEmps")
+                if (password != "1")
                 {
                     attempCount++;
                     cout << "Wrong Password, Try Again!\n";
@@ -203,7 +330,7 @@ int main()
                 int studentNumber;
                 employeeDeskMessage();
                 cin >> employeeDesk;
-                while (employeeDesk != 10)
+                while (employeeDesk != 11)
                 {
                     switch (employeeDesk)
                     {
@@ -212,13 +339,20 @@ int main()
                         return 0;
                         break;
                     case 2:
-
+                        Lesson::add();
+                        return 0;
                         break;
                     case 3:
-
+                        getLessonNameMessage();
+                        cin >> name;
+                        Lesson::removeLessons(name);
+                        return 0;
                         break;
                     case 4:
-
+                        getLessonNameMessage();
+                        cin >> name;
+                        Lesson::edit(name);
+                        return 0;
                         break;
                     case 5:
 
@@ -245,6 +379,10 @@ int main()
                         return 0;
                         break;
                     case 10:
+                        Lesson::readLessons();
+                        return 0;
+                        break;
+                    case 11:
                         return 0;
                     default:
                         return 0;

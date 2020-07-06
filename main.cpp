@@ -6,13 +6,13 @@ using namespace std;
 // Employees password keeped in README.md file //
 ///*************************************/////////
 
-
 class Student
 {
     char name[255], family[255];
-    int age, studentNumber;
+    int age;
 
 public:
+    int studentNumber;
     static void add();
     static void read(int studentNumber);
     static void edit(int studentNumber);
@@ -22,7 +22,6 @@ public:
     bool studentExists();
     friend class Student_Lesson;
 };
-
 
 istream &operator>>(istream &input, Student &student)
 {
@@ -67,13 +66,62 @@ public:
 // Many to Many Relationship //
 class Student_Lesson
 {
-    int studentNumber;
     char name[255];
 
 public:
-    static void addLesson(Student student, Lesson lesson);
-    static void removeLesson(Student student, Lesson lesson);
+    static int studentNumber;
+    static void addLesson();
+    static void removeLesson();
+    static void myLessons();
+    friend istream &operator>>(istream &input, Student_Lesson &studentLesson);
+    friend ostream &operator<<(ostream &output, const Student_Lesson &studentLesson);
 };
+
+int Student_Lesson::studentNumber = 0;
+
+void Student_Lesson::addLesson()
+{
+    Lesson lesson[20];
+    bool exit = false;
+    cout << "Enter Lesson Name For Add , if you want to exit enter \"0\"";
+    int step = 0;
+    while (!exit) {
+        cin >> lesson[step];
+        step++;
+    }
+
+    Student_Lesson studentLesson;
+    ofstream lessonsFile("student_lesson", ios::binary | ios::app);
+    cin >> studentLesson;
+
+    lessonsFile.write((char *)&studentLesson, sizeof(studentLesson));
+    cout << "\nLesson Added for User Successfully!\n";
+
+    lessonsFile.close();
+}
+
+void Student_Lesson::removeLesson()
+{
+}
+
+void Student_Lesson::myLessons()
+{
+}
+
+istream &operator>>(istream &input, Student_Lesson &studentLesson)
+{
+    cout << "\nLesson Name: ";
+    input >> studentLesson.name;
+    return input;
+}
+
+ostream &operator<<(ostream &output, const Student_Lesson &studentLesson)
+{
+    output << "\n---------------------------------------------\n";
+    output << "\nLesson Name: " << studentLesson.name;
+    cout << endl;
+    return output;
+}
 
 istream &operator>>(istream &input, Lesson &lesson)
 {
@@ -92,6 +140,7 @@ ostream &operator<<(ostream &output, const Lesson &lesson)
     cout << endl;
     return output;
 }
+
 void Lesson::add()
 {
     Lesson lesson;
@@ -248,8 +297,8 @@ bool Student::studentExists()
 
 void userTypeMessage()
 {
-    cout << "1- Student\n";
-    cout << "2- Employee\n";
+    cout << "1- Employee\n";
+    cout << "2- Student\n";
     cout << "3- Exit\n";
     cout << "Choose: ";
 }
@@ -277,6 +326,11 @@ void employeeDeskMessage()
 
 void StudentDeskMessage()
 {
+    cout << "1- Add Lesson\n";
+    cout << "2- Remove Lesson\n";
+    cout << "3- Student Lesson List\n";
+    cout << "4- Exit\n";
+    cout << "Choose: ";
 }
 
 void getStudentNumberMessage()
@@ -291,8 +345,7 @@ void getLessonNameMessage()
 
 int main()
 {
-    int userType;
-    int attempCount = 0;
+    int userType, attempCount = 0, studentNumber;
     string password;
     bool login = false;
     char name[255];
@@ -302,10 +355,43 @@ int main()
     {
         switch (userType)
         {
-        case 1:
-
-            break;
         case 2:
+            cout << "Enter Your Student Number: ";
+            cin >> studentNumber;
+            Student student;
+            student.studentNumber = studentNumber;
+            if (student.studentExists())
+            {
+                Student_Lesson::studentNumber = studentNumber;
+                int studentChoose;
+                StudentDeskMessage();
+                cin >> studentChoose;
+                while (studentChoose <= 3)
+                {
+                    switch (studentChoose)
+                    {
+                    case 1:
+                        Student_Lesson::addLesson();
+                        return 0;
+                        break;
+                    case 2:
+                        Student_Lesson::removeLesson();
+                        return 0;
+                        break;
+                    case 3:
+                        Student_Lesson::myLessons();
+                        return 0;
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                cout << "Student Does not Exists!\n";
+            }
+            return 0;
+            break;
+        case 1:
             while (attempCount < 3 && !login)
             {
                 passwordMessage();
@@ -316,15 +402,14 @@ int main()
                     cout << "Many Attempt!\n";
                     return 0;
                 }
-                if (password != "1")
+                if (password != "yazdUniEmps")
                 {
                     attempCount++;
                     cout << "Wrong Password, Try Again!\n";
                     continue;
                 }
                 login = true;
-                int employeeDesk;
-                int studentNumber;
+                int employeeDesk, studentNumber;
                 employeeDeskMessage();
                 cin >> employeeDesk;
                 while (employeeDesk != 11)

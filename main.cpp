@@ -50,23 +50,26 @@ ostream &operator<<(ostream &output, const Student &student)
 
 class Lesson
 {
-    char name[255];
     int count;
+    string name;
 
 public:
     static void readLessons();
     static void add();
-    static void edit(char name[]);
+    static void edit(string name);
     static void removeLessons(char name[]);
     friend istream &operator>>(istream &input, Lesson &lesson);
     friend ostream &operator<<(ostream &output, const Lesson &lesson);
     friend class Student_Lesson;
+    static bool lessonExists(string name);
+    int getVahedCount();
 };
 
 // Many to Many Relationship //
 class Student_Lesson
 {
     char name[255];
+    int vahedCount;
 
 public:
     static int studentNumber;
@@ -77,35 +80,81 @@ public:
     friend ostream &operator<<(ostream &output, const Student_Lesson &studentLesson);
 };
 
+int Lesson::getVahedCount()
+{
+    Lesson lesson;
+    ifstream lessonsFile("lessons", ios::binary);
+    while (lessonsFile.read((char *)&lesson, sizeof(lesson)))
+    {
+        if (lesson.name == name)
+        {
+            return lesson.count;
+        }
+    }
+    lessonsFile.close();
+    return 0;
+}
+
 int Student_Lesson::studentNumber = 0;
 
 void Student_Lesson::addLesson()
 {
-    Lesson lesson[20];
-    bool exit = false;
-    cout << "Enter Lesson Name For Add , if you want to exit enter \"0\"";
+    Student_Lesson studentLesson[20];
+    int exit = 1;
+    int totalVahed = 0;
     int step = 0;
-    while (!exit) {
-        cin >> lesson[step];
-        step++;
+    Lesson lesson;
+    while (exit != 0)
+    {
+        cin >> studentLesson[step];
+        if (Lesson::lessonExists(studentLesson[step].name))
+        {
+            step++;
+            totalVahed += lesson.getVahedCount();
+        }
+        else
+        {
+            cout << "lesson does not exists!\n";
+        }
+        cout << "you choosed " << totalVahed << " vahed , if you want to finish enter 0 else any number.\n";
+        cin >> exit;
     }
+    if (totalVahed > 20 || totalVahed < 14)
+    {
+        cout << "you can not get more than 20 and less than 14 vaheds\n";
+    }
+    else
+    {
+        for (int i = 0; i <= step; i++)
+        {
+            Student_Lesson studentLesson;
+            ofstream lessonsFile("student_lesson", ios::binary | ios::app);
+            cin >> studentLesson;
 
-    Student_Lesson studentLesson;
-    ofstream lessonsFile("student_lesson", ios::binary | ios::app);
-    cin >> studentLesson;
-
-    lessonsFile.write((char *)&studentLesson, sizeof(studentLesson));
-    cout << "\nLesson Added for User Successfully!\n";
-
-    lessonsFile.close();
+            lessonsFile.write((char *)&studentLesson, sizeof(studentLesson));
+            lessonsFile.close();
+        }
+        cout << "\nLesson Added for User Successfully!\n";
+    }
 }
 
 void Student_Lesson::removeLesson()
 {
+
 }
 
 void Student_Lesson::myLessons()
 {
+    Student_Lesson studentLesson;
+    ifstream studentsFile("student_lesson", ios::binary);
+    while (studentsFile.read((char *)&studentLesson, sizeof(studentLesson)))
+    {
+        if (Student_Lesson::studentNumber == studentNumber)
+        {
+            cout << studentLesson;
+        }
+    }
+    studentsFile.close();
 }
 
 istream &operator>>(istream &input, Student_Lesson &studentLesson)
@@ -164,7 +213,7 @@ void Lesson::readLessons()
     lessonsFile.close();
 }
 
-void Lesson::edit(char name[])
+void Lesson::edit(string name)
 {
     Lesson lesson;
     Lesson specificlesson;
@@ -275,6 +324,24 @@ void Student::removeStudent(int studentNumber)
     tempFile.close();
     remove("students");
     rename("temp", "students");
+}
+
+bool Lesson::lessonExists(string name)
+{
+    Lesson lesson;
+    bool is = false;
+    ifstream lessonFile("lessons", ios::binary);
+    while (lessonFile.read((char *)&lesson, sizeof(lesson)))
+    {
+        if (lesson.name == name)
+        {
+            is = true;
+            lessonFile.close();
+            return is;
+        }
+    }
+    lessonFile.close();
+    return is;
 }
 
 bool Student::studentExists()

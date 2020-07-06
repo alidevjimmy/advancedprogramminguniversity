@@ -51,17 +51,17 @@ ostream &operator<<(ostream &output, const Student &student)
 class Lesson
 {
     int count;
-    string name;
+    char name[255];
 
 public:
     static void readLessons();
     static void add();
-    static void edit(string name);
+    static void edit(char name[255]);
     static void removeLessons(char name[]);
     friend istream &operator>>(istream &input, Lesson &lesson);
     friend ostream &operator<<(ostream &output, const Lesson &lesson);
     friend class Student_Lesson;
-    static bool lessonExists(string name);
+    static bool lessonExists(char name[255]);
     int getVahedCount();
 };
 
@@ -107,6 +107,7 @@ void Student_Lesson::addLesson()
     while (exit != 0)
     {
         cin >> studentLesson[step];
+        lesson.name = studentLesson[step].name;
         if (Lesson::lessonExists(studentLesson[step].name))
         {
             step++;
@@ -213,7 +214,7 @@ void Lesson::readLessons()
     lessonsFile.close();
 }
 
-void Lesson::edit(string name)
+void Lesson::edit(char name[255])
 {
     Lesson lesson;
     Lesson specificlesson;
@@ -326,14 +327,14 @@ void Student::removeStudent(int studentNumber)
     rename("temp", "students");
 }
 
-bool Lesson::lessonExists(string name)
+bool Lesson::lessonExists(char name[255])
 {
     Lesson lesson;
     bool is = false;
     ifstream lessonFile("lessons", ios::binary);
     while (lessonFile.read((char *)&lesson, sizeof(lesson)))
     {
-        if (lesson.name == name)
+        if ((string)lesson.name == (string)name)
         {
             is = true;
             lessonFile.close();

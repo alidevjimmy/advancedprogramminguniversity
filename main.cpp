@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <string.h>
 using namespace std;
 
 ////************************************////////
@@ -56,13 +57,13 @@ class Lesson
 public:
     static void readLessons();
     static void add();
-    static void edit(char name[255]);
+    static void edit(char name[]);
     static void removeLessons(char name[]);
     friend istream &operator>>(istream &input, Lesson &lesson);
     friend ostream &operator<<(ostream &output, const Lesson &lesson);
     friend class Student_Lesson;
-    static bool lessonExists(char name[255]);
-    int getVahedCount();
+    static bool lessonExists(char name[]);
+    int getVahedCount(char name1[]);
 };
 
 // Many to Many Relationship //
@@ -74,21 +75,21 @@ class Student_Lesson
 public:
     static int studentNumber;
     static void addLesson();
-    static void removeLesson();
+    static void removeLesson(char name[]);
     static void myLessons();
     friend istream &operator>>(istream &input, Student_Lesson &studentLesson);
     friend ostream &operator<<(ostream &output, const Student_Lesson &studentLesson);
 };
 
-int Lesson::getVahedCount()
+int Lesson::getVahedCount(char name1[])
 {
     Lesson lesson;
     ifstream lessonsFile("lessons", ios::binary);
     while (lessonsFile.read((char *)&lesson, sizeof(lesson)))
     {
-        if (lesson.name == name)
+        if ((string)lesson.name == (string)name1)
         {
-            return lesson.count;
+            return (int)lesson.count;
         }
     }
     lessonsFile.close();
@@ -107,11 +108,26 @@ void Student_Lesson::addLesson()
     while (exit != 0)
     {
         cin >> studentLesson[step];
-        lesson.name = studentLesson[step].name;
         if (Lesson::lessonExists(studentLesson[step].name))
         {
-            step++;
-            totalVahed += lesson.getVahedCount();
+            bool repeated = false;
+            for (int i = 0; i < step; i++)
+            {
+                if ((string)studentLesson[step].name == (string)studentLesson[i].name)
+                {
+                    repeated = true;
+                    break;
+                }
+            }
+            if (!repeated)
+            {
+                totalVahed += lesson.getVahedCount(studentLesson[step].name);
+                step++;
+            }
+            else
+            {
+                cout << "lesson reapeted!\n";
+            }
         }
         else
         {
@@ -126,22 +142,35 @@ void Student_Lesson::addLesson()
     }
     else
     {
-        for (int i = 0; i <= step; i++)
+        for (int i = 0; i < step; i++)  
         {
-            Student_Lesson studentLesson;
             ofstream lessonsFile("student_lesson", ios::binary | ios::app);
-            cin >> studentLesson;
 
-            lessonsFile.write((char *)&studentLesson, sizeof(studentLesson));
+            lessonsFile.write((char *)&studentLesson[i], sizeof(studentLesson[i]));
             lessonsFile.close();
         }
         cout << "\nLesson Added for User Successfully!\n";
     }
 }
 
-void Student_Lesson::removeLesson()
+void Student_Lesson::removeLesson(char name[])
 {
-
+    Student_Lesson studentLesson;
+    ifstream studentsFile("student_lesson", ios::binary);
+    ofstream tempFile("temp", ios::binary | ios::app);
+    while (studentsFile.read((char *)&studentLesson, sizeof(studentLesson)))
+    {
+        if (studentLesson.studentNumber == Student_Lesson::studentNumber && (string)studentLesson.name == (string)name)
+        {
+            continue;
+        } 
+        tempFile.write((char *)&studentLesson, sizeof(studentLesson));
+    }
+    cout << "Student Lesson Successufy Removed!\n";
+    studentsFile.close();
+    tempFile.close();
+    remove("student_lesson");
+    rename("temp", "student_lesson");
 }
 
 void Student_Lesson::myLessons()
@@ -150,7 +179,7 @@ void Student_Lesson::myLessons()
     ifstream studentsFile("student_lesson", ios::binary);
     while (studentsFile.read((char *)&studentLesson, sizeof(studentLesson)))
     {
-        if (Student_Lesson::studentNumber == studentNumber)
+        if (Student_Lesson::studentNumber == studentLesson.studentNumber)
         {
             cout << studentLesson;
         }
@@ -214,7 +243,7 @@ void Lesson::readLessons()
     lessonsFile.close();
 }
 
-void Lesson::edit(char name[255])
+void Lesson::edit(char name[])
 {
     Lesson lesson;
     Lesson specificlesson;
@@ -327,7 +356,7 @@ void Student::removeStudent(int studentNumber)
     rename("temp", "students");
 }
 
-bool Lesson::lessonExists(char name[255])
+bool Lesson::lessonExists(char name[])
 {
     Lesson lesson;
     bool is = false;
@@ -397,7 +426,8 @@ void StudentDeskMessage()
     cout << "1- Add Lesson\n";
     cout << "2- Remove Lesson\n";
     cout << "3- Student Lesson List\n";
-    cout << "4- Exit\n";
+    cout << "4- All Lessons List\n";
+    cout << "5- Exit\n";
     cout << "Choose: ";
 }
 
@@ -434,7 +464,7 @@ int main()
                 int studentChoose;
                 StudentDeskMessage();
                 cin >> studentChoose;
-                while (studentChoose <= 3)
+                while (studentChoose <= 4)
                 {
                     switch (studentChoose)
                     {
@@ -443,11 +473,18 @@ int main()
                         return 0;
                         break;
                     case 2:
-                        Student_Lesson::removeLesson();
+                        char name[255];
+                        cout << "Enter Lesson Name: ";
+                        cin >> name;
+                        Student_Lesson::removeLesson(name);
                         return 0;
                         break;
                     case 3:
                         Student_Lesson::myLessons();
+                        return 0;
+                        break;
+                    case 4:
+                        Lesson::readLessons();
                         return 0;
                         break;
                     }
@@ -505,10 +542,48 @@ int main()
                         return 0;
                         break;
                     case 5:
-
-                        break;
                     case 6:
-
+                        cout << "Enter Your Student Number: ";
+            cin >> studentNumber;
+            Student student;
+            student.studentNumber = studentNumber;
+            if (student.studentExists())
+            {
+                Student_Lesson::studentNumber = studentNumber;
+                int studentChoose;
+                StudentDeskMessage();
+                cin >> studentChoose;
+                while (studentChoose <= 4)
+                {
+                    switch (studentChoose)
+                    {
+                    case 1:
+                        Student_Lesson::addLesson();
+                        return 0;
+                        break;
+                    case 2:
+                        char name[255];
+                        cout << "Enter Lesson Name: ";
+                        cin >> name;
+                        Student_Lesson::removeLesson(name);
+                        return 0;
+                        break;
+                    case 3:
+                        Student_Lesson::myLessons();
+                        return 0;
+                        break;
+                    case 4:
+                        Lesson::readLessons();
+                        return 0;
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                cout << "Student Does not Exists!\n";
+            }
+            return 0;
                         break;
                     case 7:
                         getStudentNumberMessage();
